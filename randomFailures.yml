@@ -1,0 +1,55 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+
+stages:
+- stage: Build
+  displayName: Build 123
+  jobs:  
+  - job: BuildJob
+    displayName: Build job 1
+    pool:
+      name: default
+    steps:
+      - script: echo "L0 Tests"
+        displayName: L0 tests
+
+- stage: Staging
+  displayName: Staging 123
+  jobs:
+  - deployment: job1
+    environment: environment-test
+    pool: default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - powershell: Get-Random -Maximum 3 | % {if($_ % 2 -eq 0 ) {"$_ is even"; ech "Failed"} else {"$_ is odd"; echo "Pass"}}
+            displayName: 'Run a one-line script'
+  - deployment: job2
+    environment: environment-staging2
+    pool: default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: echo "Hello, world!2"
+            displayName: 'Run a one-line script2'
+
+- stage: Prod
+  displayName: Prod
+  jobs:
+  - job: Deploy
+    displayName: Deploy to kubernetes
+    pool:
+      name: default
+    steps:
+    - checkout: none
+    - script: echo "Deploy project1"
+      displayName: Deploy
