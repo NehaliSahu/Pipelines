@@ -1,0 +1,49 @@
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+
+stages:
+- stage: Build
+  displayName: Build
+  jobs:
+  - job: Build
+    displayName: Build job
+    pool:
+      name: Default
+    steps:
+      - task: NuGetToolInstaller@0
+
+      - task: NuGetCommand@2
+        inputs:
+          restoreSolution: '$(solution)'
+
+      - task: VSBuild@1
+        displayName: Build solution
+        inputs:
+          solution: '$(solution)'
+          msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
+          platform: '$(buildPlatform)'
+          configuration: '$(buildConfiguration)'
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          ArtifactName: 'A1'
+          publishLocation: 'Container'
+
+  - deployment: deploymentJob
+    environment: envionment
+    dependsOn: Build
+    pool: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@0
+            inputs:
+              artifactName: 'A1'
+              downloadPath: '$(System.ArtifactStagingDirectory)'
+          - powershell: Get-Random -Maximum 4 | % {if($_ % 2 -eq 0 ) {"$_ is even"; ech "Failed"} else {"$_ is odd"; echo "Pass"}}
+            displayName: 'Run a one-line script'
