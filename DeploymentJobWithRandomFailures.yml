@@ -1,0 +1,25 @@
+jobs:
+ - job: J1
+   pool:
+    name: default
+   steps:
+      - task: PublishBuildArtifacts@1
+        inputs:
+         PathtoPublish: 'artifact1.1'
+         ArtifactName: 'A1.1'
+         publishLocation: 'Container'
+         
+ - deployment: deploymentJob4
+   environment: envionment4
+   dependsOn: J1
+   pool: Default
+   strategy:
+    runOnce:
+      deploy:
+       steps:
+        - task: DownloadBuildArtifacts@0
+          inputs:
+            artifactName: 'A1.1'
+            downloadPath: '$(System.ArtifactStagingDirectory)'
+        - powershell: Get-Random -Maximum 3 | % {if($_ % 2 -eq 0 ) {"$_ is even"; ech "Failed"} else {"$_ is odd"; echo "Pass"}}
+          displayName: 'Run a one-line script'
